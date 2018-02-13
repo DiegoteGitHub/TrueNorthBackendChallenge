@@ -41,7 +41,7 @@ public class CampsiteController {
 			UriComponentsBuilder ucBuilder) {
 		
 		HttpHeaders headers = new HttpHeaders();
-		if (!this.validateCampsite(cmpsId)) {
+		if (!service.existsCampsite(cmpsId)) {
 			headers.setLocation(ucBuilder.path("/campsite/{cmpsId}").buildAndExpand(cmpsId).toUri());
 			return new ResponseEntity<Campsite>(headers, HttpStatus.NO_CONTENT);
 		}	else {
@@ -66,7 +66,7 @@ public class CampsiteController {
         
         HttpHeaders headers = new HttpHeaders();
         
-        if (!this.validateCampsite(cmpsId)) {
+        if (!service.existsCampsite(cmpsId)) {
         	logger.error("Campsite with ID => " + cmpsId + " does not exist");  
         	CustomErrorType error =  new CustomErrorType("Campsite with ID => " + cmpsId + " does not exist");
         	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
@@ -84,9 +84,4 @@ public class CampsiteController {
             return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
         }
     }
-
-	private boolean validateCampsite(Long cmpsId) {
-		logger.debug("Validating existence of campsite => " + cmpsId);
-		return service.existsCampsite(cmpsId);
-	}
 }

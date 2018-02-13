@@ -12,5 +12,11 @@ public interface CampsiteService {
 	boolean existsCampsite(Long campsiteId);
 
 	void reserve(Reserve reserve, Long campsiteId);
+
+	boolean existsReserve(Long reserveId);
+
+	void deleteReserve(Long reserveId);
+
+	void updateReserve(Reserve reserve, Long reserveId);
 	
 }

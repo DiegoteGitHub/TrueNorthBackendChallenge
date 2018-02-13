@@ -92,8 +92,29 @@ public class CampsiteServiceImpl implements CampsiteService {
 	@Transactional
 	public void reserve(Reserve reserve, Long campsiteId) {
 		reserve.setCampsite(campsiteRepository.findById(campsiteId).get());
-		validateReserve(reserve, campsiteId);
+		validateCreateReserve(reserve, campsiteId);
 		reserveRepository.save(reserve);
+	}
+	
+	@Override
+	public boolean existsReserve(Long reserveId) {
+		return reserveRepository.findById(reserveId).isPresent();
+	}
+
+	@Override
+	public void deleteReserve(Long reserveId) {
+		reserveRepository.deleteById(reserveId);
+	}
+	
+	@Override
+	public void updateReserve(Reserve reserve, Long reserveId) {
+		validateUpdateReserve(reserve, reserveId);
+		Reserve oldReserve = reserveRepository.findById(reserveId).get();
+		oldReserve.setEmail(reserve.getEmail());
+		oldReserve.setFullName(reserve.getFullName());
+		oldReserve.setArrivalDate(reserve.getArrivalDate());
+		oldReserve.setDepartureDate(reserve.getDepartureDate());
+		reserveRepository.save(oldReserve);
 	}
 	
 	private boolean dateOverlapsWithReserve(LocalDate i, Reserve r) {
@@ -105,10 +126,8 @@ public class CampsiteServiceImpl implements CampsiteService {
 			return false;
 	}
 	
-	private void validateReserve(Reserve reserve, Long campsiteId) {
+	private void validateDateParameters(LocalDate arrivalDate, LocalDate departureDate) {
 		LocalDate today = LocalDate.now();
-		LocalDate arrivalDate = Utilities.getDateFromUnixTime(reserve.getArrivalDate());
-		LocalDate departureDate = Utilities.getDateFromUnixTime(reserve.getDepartureDate());
 		
 		/* Arrival date cannot be before tomorrow or after one month from today */
 		if (arrivalDate.isBefore(today.plusDays(Utilities.MINIMUM_DAYS_AHEAD)) || 
@@ -125,9 +144,21 @@ public class CampsiteServiceImpl implements CampsiteService {
 		if (Period.between(arrivalDate, departureDate).getDays() > Utilities.MAXIMUM_RESERVE_DAYS) {
 			throw new RuntimeException("Cannot reserve for more than " + Utilities.MAXIMUM_RESERVE_DAYS + " days");
 		}
+	}
+	
+	private void validateCreateReserve(Reserve reserve, Long campsiteId) {
+		LocalDate arrivalDate = Utilities.getDateFromUnixTime(reserve.getArrivalDate());
+		LocalDate departureDate = Utilities.getDateFromUnixTime(reserve.getDepartureDate());
+		
+		validateDateParameters(arrivalDate, departureDate);
 		
 		/* Check if new reserve overlaps to existing one */
 		List<Reserve> reserves = campsiteRepository.findById(campsiteId).get().getReserves();
+		validateOverlappingReserves(arrivalDate, departureDate, reserves);
+	}
+
+	private void validateOverlappingReserves(LocalDate arrivalDate, LocalDate departureDate, List<Reserve> reserves) {
+		
 		/* Set containing actual reserved days */
 		Set<LocalDate> daysReserved = new HashSet<LocalDate>();
 		for (Reserve r: reserves) {
@@ -137,12 +168,27 @@ public class CampsiteServiceImpl implements CampsiteService {
 				daysReserved.add(i);
 			}
 		}
-		/* Check if days of the new reserve is contained in the reserved days */
+		/* Check if days of the new reserve are contained in the reserved days */
 		for (LocalDate i = arrivalDate; i.isBefore(departureDate); i = i.plusDays(1)) {
 			if (daysReserved.contains(i) ) {
 				throw new RuntimeException("New reserve overlaps with existing one");
 			}
 		}
 	}
-
+	
+	private void validateUpdateReserve(Reserve reserve, Long reserveId) {
+		LocalDate arrivalDate = Utilities.getDateFromUnixTime(reserve.getArrivalDate());
+		LocalDate departureDate = Utilities.getDateFromUnixTime(reserve.getDepartureDate());
+		
+		validateDateParameters(arrivalDate, departureDate);
+		
+		/* Retrieve all reserves except the one to be updated */
+		List<Reserve> reserves = entityManager.createQuery("SELECT rs FROM Reserve rs WHERE campsite_id = :campsite_id AND id != :reserve_id", Reserve.class)
+		.setParameter("campsite_id", reserveRepository.findById(reserveId).get().getCampsite().getId())
+		.setParameter("reserve_id", reserveId)
+	    .getResultList();
+		
+		/* Checks if the updated reserve overlaps with existing ones */
+		validateOverlappingReserves(arrivalDate, departureDate, reserves);
+	}
 }
