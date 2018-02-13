@@ -65,7 +65,7 @@ public class CampsiteController {
     		@RequestBody Reserve reserve,
     		@PathVariable(value="cmpsId") Long cmpsId, UriComponentsBuilder ucBuilder) {
     	
-        logger.info("Reserving campsite => " + cmpsId + " with reserve => " + reserve);
+        logger.debug("Reserving campsite => " + cmpsId + " with reserve => " + reserve);
  
 //        if (campsiteService.validateReserve(campsite)) {
 //            logger.error("Unable to create. A User with name {} already exist", user.getName());
@@ -80,7 +80,7 @@ public class CampsiteController {
     }
 
 	private boolean validateCampsite(Long cmpsId) {
-		logger.info("Validating existence of campsite => " + cmpsId);
+		logger.debug("Validating existence of campsite => " + cmpsId);
 		return service.existsCampsite(cmpsId);
 	}
 	
