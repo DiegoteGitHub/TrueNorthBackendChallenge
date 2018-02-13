@@ -1,10 +1,5 @@
 package com.dlalo.truenorth.springboot.backendchallenge.controller;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Calendar;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +19,8 @@ import com.dlalo.truenorth.springboot.backendchallenge.exception.CampsiteExcepti
 import com.dlalo.truenorth.springboot.backendchallenge.model.Campsite;
 import com.dlalo.truenorth.springboot.backendchallenge.model.Reserve;
 import com.dlalo.truenorth.springboot.backendchallenge.service.CampsiteService;
+import com.dlalo.truenorth.springboot.backendchallenge.util.CustomErrorType;
+import com.dlalo.truenorth.springboot.backendchallenge.util.Utilities;
 
 
 @RestController
@@ -48,7 +45,7 @@ public class CampsiteController {
 			headers.setLocation(ucBuilder.path("/campsite/{cmpsId}").buildAndExpand(cmpsId).toUri());
 			return new ResponseEntity<Campsite>(headers, HttpStatus.NO_CONTENT);
 		}	else {
-			Campsite campsite = service.getCampsiteAvailability(cmpsId, getDateFromUnixTime(fromDate), getDateFromUnixTime(toDate));
+			Campsite campsite = service.getCampsiteAvailability(cmpsId, Utilities.getDateFromUnixTime(fromDate), Utilities.getDateFromUnixTime(toDate));
 			headers.setLocation(ucBuilder.path("/campsite/{cmpsId}").buildAndExpand(campsite.getId()).toUri());
 			return new ResponseEntity<Campsite>(campsite, headers, HttpStatus.OK);
 		}
@@ -61,35 +58,35 @@ public class CampsiteController {
 	
 
     @RequestMapping(value = "/{cmpsId}/reserve", method = RequestMethod.POST)
-    public ResponseEntity<Reserve> reserveCampsite(
+    public ResponseEntity<?> reserveCampsite(
     		@RequestBody Reserve reserve,
     		@PathVariable(value="cmpsId") Long cmpsId, UriComponentsBuilder ucBuilder) {
     	
-        logger.debug("Reserving campsite => " + cmpsId + " with reserve => " + reserve);
- 
-//        if (campsiteService.validateReserve(campsite)) {
-//            logger.error("Unable to create. A User with name {} already exist", user.getName());
-//            return new ResponseEntity(new CustomErrorType("Unable to create. A User with name " + 
-//            user.getName() + " already exist."),HttpStatus.CONFLICT);
-//        }
-//        userService.saveUser(user);
- 
+        logger.debug("Attempting to reserve campsite => " + cmpsId + " with reserve => " + reserve);
+        
         HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(ucBuilder.path("/campsite/{cmpsId}/reserve").buildAndExpand(reserve.getId()).toUri());
-        return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
+        
+        if (!this.validateCampsite(cmpsId)) {
+        	logger.error("Campsite with ID => " + cmpsId + " does not exist");  
+        	CustomErrorType error =  new CustomErrorType("Campsite with ID => " + cmpsId + " does not exist");
+        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
+        }
+        
+        headers.setLocation(ucBuilder.path("/campsite/{cmpsId}/reserve").buildAndExpand(cmpsId).toUri());
+        
+        service.reserve(reserve, cmpsId);
+        if (reserve.getId() ==  null) {
+        	logger.error("Unable to reserve campsite, another reserve is overlaping");
+        	CustomErrorType error =  new CustomErrorType("Unable to reserve campsite, another reserve is overlaping");
+        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.CONFLICT);
+        } else {
+        	logger.debug("Created reserve with ID => " + reserve.getId());
+            return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
+        }
     }
 
 	private boolean validateCampsite(Long cmpsId) {
 		logger.debug("Validating existence of campsite => " + cmpsId);
 		return service.existsCampsite(cmpsId);
 	}
-	
-	private LocalDate getDateFromUnixTime(Long milliSeconds) {
-		if (milliSeconds != null) {
-			return Instant.ofEpochMilli(milliSeconds * 1000).atZone(ZoneId.systemDefault()).toLocalDate();
-		} else {
-			return null;
-		}
-	}
-
 }

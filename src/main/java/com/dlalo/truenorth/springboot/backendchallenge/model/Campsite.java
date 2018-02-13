@@ -2,8 +2,8 @@ package com.dlalo.truenorth.springboot.backendchallenge.model;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -28,7 +28,7 @@ public class Campsite implements Serializable {
 	private String name;
 	
 	@Transient
-	private List<LocalDate> availableDays;
+	private Set<LocalDate> availableDays;
 	
 	// 1 campsite => N reserves
 	@OneToMany(mappedBy="campsite", fetch=FetchType.LAZY, cascade=CascadeType.ALL)
@@ -58,11 +58,11 @@ public class Campsite implements Serializable {
 		this.reserves = reserves;
 	}
 
-	public List<LocalDate> getAvailableDays() {
+	public Set<LocalDate> getAvailableDays() {
 		return availableDays;
 	}
 
-	public void setAvailableDays(List<LocalDate> availableDays) {
+	public void setAvailableDays(Set<LocalDate> availableDays) {
 		this.availableDays = availableDays;
 	}
 }

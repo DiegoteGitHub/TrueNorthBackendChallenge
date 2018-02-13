@@ -1,8 +1,14 @@
 package com.dlalo.truenorth.springboot.backendchallenge.service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Optional;
+import java.time.Period;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +18,8 @@ import org.springframework.stereotype.Service;
 import com.dlalo.truenorth.springboot.backendchallenge.model.Campsite;
 import com.dlalo.truenorth.springboot.backendchallenge.model.Reserve;
 import com.dlalo.truenorth.springboot.backendchallenge.repository.CampsiteRepository;
+import com.dlalo.truenorth.springboot.backendchallenge.repository.ReserveRepository;
+import com.dlalo.truenorth.springboot.backendchallenge.util.Utilities;
 
 @Service("campsiteService")
 public class CampsiteServiceImpl implements CampsiteService {
@@ -19,14 +27,17 @@ public class CampsiteServiceImpl implements CampsiteService {
 	@Autowired
 	CampsiteRepository campsiteRepository;
 	
-	private static final int DEFAULT_RANGE_MONTHS = 1;
-	private static final int MINIMUM_DAYS_AHEAD = 1;
+	@Autowired
+	ReserveRepository reserveRepository;
+	
+	@PersistenceContext
+	EntityManager entityManager;
 	
 	private static final Logger logger = LoggerFactory.getLogger(CampsiteServiceImpl.class);
 
 	@Override
 	public Campsite getCampsiteAvailability(Long campsiteId, LocalDate fromDate, LocalDate toDate) {
-		Optional<Campsite> optCampsite = campsiteRepository.findById(campsiteId);
+		
 		LocalDate today = LocalDate.now();
 			
 		if (fromDate != null && toDate != null) {
@@ -42,17 +53,17 @@ public class CampsiteServiceImpl implements CampsiteService {
 			if (fromDate != null ^ toDate != null) {
 				throw new RuntimeException("Cannot send only one date");
 			} else {
-				fromDate = today.plusDays(MINIMUM_DAYS_AHEAD);
-				toDate = fromDate.plusMonths(DEFAULT_RANGE_MONTHS);
+				fromDate = today.plusDays(Utilities.MINIMUM_DAYS_AHEAD);
+				toDate = fromDate.plusMonths(Utilities.MAXIMUM_MONTHS_AHEAD);
 			}
 		}
 		
 		logger.debug("From date => " + fromDate);
 		logger.debug("To date => " + toDate);
 
-		Campsite campsite = optCampsite.get();
+		Campsite campsite = campsiteRepository.findById(campsiteId).get();
 		if (campsite != null) {
-			campsite.setAvailableDays(new ArrayList<LocalDate>());
+			campsite.setAvailableDays(new HashSet<LocalDate>());
 			for (LocalDate i = fromDate; i.isBefore(toDate); i = i.plusDays(1)) {
 				if (campsite.getReserves().isEmpty()) {
 					campsite.getAvailableDays().add(i);
@@ -72,16 +83,66 @@ public class CampsiteServiceImpl implements CampsiteService {
 		return campsite;		
 	}
 
-	private boolean dateOverlapsWithReserve(LocalDate i, Reserve r) {
-		if ( (i.isEqual(r.getArrivalDate()) || i.isAfter(r.getArrivalDate())) && i.isBefore(r.getDepartureDate()) )
-				return true;
-		else
-			return false;
-	}
-
 	@Override
 	public boolean existsCampsite(Long campsiteId) {
 		return campsiteRepository.existsById(campsiteId);
+	}
+
+	@Override
+	@Transactional
+	public void reserve(Reserve reserve, Long campsiteId) {
+		reserve.setCampsite(campsiteRepository.findById(campsiteId).get());
+		validateReserve(reserve, campsiteId);
+		reserveRepository.save(reserve);
+	}
+	
+	private boolean dateOverlapsWithReserve(LocalDate i, Reserve r) {
+		LocalDate arrivalDate = Utilities.getDateFromUnixTime(r.getArrivalDate());
+		LocalDate departureDate = Utilities.getDateFromUnixTime(r.getDepartureDate());
+		if ( (i.isEqual(arrivalDate) || i.isAfter(arrivalDate)) && i.isBefore(departureDate) )
+			return true;
+		else
+			return false;
+	}
+	
+	private void validateReserve(Reserve reserve, Long campsiteId) {
+		LocalDate today = LocalDate.now();
+		LocalDate arrivalDate = Utilities.getDateFromUnixTime(reserve.getArrivalDate());
+		LocalDate departureDate = Utilities.getDateFromUnixTime(reserve.getDepartureDate());
+		
+		/* Arrival date cannot be before tomorrow or after one month from today */
+		if (arrivalDate.isBefore(today.plusDays(Utilities.MINIMUM_DAYS_AHEAD)) || 
+			arrivalDate.isAfter(today.plusMonths(Utilities.MAXIMUM_MONTHS_AHEAD))) {
+			throw new RuntimeException("Invalid arrival date => " + arrivalDate);
+		}
+		
+		/* Departure date cannot be before arrival date */
+		if (departureDate.isBefore(arrivalDate)) {
+			throw new RuntimeException("Departure date cannot be before arrival date");
+		}
+		
+		/* Reserves can last three days maximum */
+		if (Period.between(arrivalDate, departureDate).getDays() > Utilities.MAXIMUM_RESERVE_DAYS) {
+			throw new RuntimeException("Cannot reserve for more than " + Utilities.MAXIMUM_RESERVE_DAYS + " days");
+		}
+		
+		/* Check if new reserve overlaps to existing one */
+		List<Reserve> reserves = campsiteRepository.findById(campsiteId).get().getReserves();
+		/* Set containing actual reserved days */
+		Set<LocalDate> daysReserved = new HashSet<LocalDate>();
+		for (Reserve r: reserves) {
+			LocalDate rArrivalDate = Utilities.getDateFromUnixTime(r.getArrivalDate());
+			LocalDate rDepartureDate = Utilities.getDateFromUnixTime(r.getDepartureDate());
+			for (LocalDate i = rArrivalDate; i.isBefore(rDepartureDate); i = i.plusDays(1)) {
+				daysReserved.add(i);
+			}
+		}
+		/* Check if days of the new reserve is contained in the reserved days */
+		for (LocalDate i = arrivalDate; i.isBefore(departureDate); i = i.plusDays(1)) {
+			if (daysReserved.contains(i) ) {
+				throw new RuntimeException("New reserve overlaps with existing one");
+			}
+		}
 	}
 
 }

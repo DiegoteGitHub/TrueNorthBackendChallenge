@@ -31,10 +31,10 @@ public class Reserve implements Serializable {
 	private String fullName;
 	
 	@Column
-	private LocalDate arrivalDate;
+	private Long arrivalDate;
 	
 	@Column
-	private LocalDate departureDate;
+	private Long departureDate;
 	
 	// N reserves => 1 campsite
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -66,19 +66,19 @@ public class Reserve implements Serializable {
 		this.fullName = fullName;
 	}
 
-	public LocalDate getArrivalDate() {
+	public Long getArrivalDate() {
 		return arrivalDate;
 	}
 
-	public void setArrivalDate(LocalDate arrivalDate) {
+	public void setArrivalDate(Long arrivalDate) {
 		this.arrivalDate = arrivalDate;
 	}
 
-	public LocalDate getDepartureDate() {
+	public Long getDepartureDate() {
 		return departureDate;
 	}
 
-	public void setDepartureDate(LocalDate departureDate) {
+	public void setDepartureDate(Long departureDate) {
 		this.departureDate = departureDate;
 	}
 
