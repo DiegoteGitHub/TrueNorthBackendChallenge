@@ -2,6 +2,7 @@ package com.dlalo.truenorth.springboot.backendchallenge.service;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -91,8 +92,8 @@ public class CampsiteServiceImpl implements CampsiteService {
 	@Override
 	@Transactional
 	public void reserve(Reserve reserve, Long campsiteId) {
-		reserve.setCampsite(campsiteRepository.findById(campsiteId).get());
 		validateCreateReserve(reserve, campsiteId);
+		reserve.setCampsite(campsiteRepository.findById(campsiteId).get());
 		reserveRepository.save(reserve);
 	}
 	
@@ -124,6 +125,11 @@ public class CampsiteServiceImpl implements CampsiteService {
 			getCampsiteAvailability(c.getId(), arrivalDate, departureDate);
 		}
 		return campsites;
+	}
+	
+	@Override
+	public Reserve getReserve(Long reserveId) {
+		return reserveRepository.findById(reserveId).get();
 	}
 	
 	private boolean dateOverlapsWithReserve(LocalDate i, Reserve r) {

@@ -21,5 +21,7 @@ public interface CampsiteService {
 	void updateReserve(Reserve reserve, Long reserveId);
 
 	List<Campsite> getCampsitesAvailability(LocalDate arrivalDate, LocalDate departureDate);
+
+	Reserve getReserve(Long reserveId);
 	
 }

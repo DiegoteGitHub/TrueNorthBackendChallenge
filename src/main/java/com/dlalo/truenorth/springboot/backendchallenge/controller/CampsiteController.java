@@ -80,8 +80,6 @@ public class CampsiteController {
         	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
         }
         
-        headers.setLocation(ucBuilder.path("/campsite/{cmpsId}/reserve").buildAndExpand(cmpsId).toUri());
-        
         service.reserve(reserve, cmpsId);
         if (reserve.getId() ==  null) {
         	logger.error("Unable to reserve campsite, another reserve is overlaping");
@@ -89,6 +87,7 @@ public class CampsiteController {
         	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.CONFLICT);
         } else {
         	logger.debug("Created reserve with ID => " + reserve.getId());
+        	headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserve.getId()).toUri());
             return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
         }
     }

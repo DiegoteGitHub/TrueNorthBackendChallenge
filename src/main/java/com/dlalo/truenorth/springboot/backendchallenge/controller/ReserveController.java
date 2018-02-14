@@ -26,6 +26,25 @@ public class ReserveController {
 	@Autowired
 	CampsiteService service;
 	
+	/* RETRIEVE RESERVE */
+    @RequestMapping(value = "/{reserveId}", method = RequestMethod.GET)
+    public ResponseEntity<?> getReserve(
+    		@PathVariable(value="reserveId") Long reserveId, UriComponentsBuilder ucBuilder) {
+    	
+		HttpHeaders headers = new HttpHeaders();
+		if (!service.existsReserve(reserveId)) {
+			String errorStr = "Reserve not found";
+			CustomErrorType error = new CustomErrorType(errorStr);
+			logger.error(errorStr);
+			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
+			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+		}	else {
+			Reserve reserve = service.getReserve(reserveId);
+			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
+			return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.OK);
+		}
+    }
+	
 	/* UPDATE RESERVE */
     @RequestMapping(value = "/{reserveId}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateReserve(
@@ -38,10 +57,9 @@ public class ReserveController {
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
 			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
 		}	else {
-			CustomErrorType msg = new CustomErrorType("Reserve updated");
 			service.updateReserve(reserve, reserveId);
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
-			return new ResponseEntity<CustomErrorType>(msg, headers, HttpStatus.OK);
+			return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.OK);
 		}
     }
     

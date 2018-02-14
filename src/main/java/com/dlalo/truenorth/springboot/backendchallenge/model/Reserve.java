@@ -39,6 +39,16 @@ public class Reserve implements Serializable {
 	@JoinColumn(name = "campsite_id")
 	@JsonIgnore
 	private Campsite campsite;
+	
+	public Reserve() {
+	}
+	
+	public Reserve(String email, String fullName, Long arrivalDate, Long departureDate) {
+		this.email = email; 
+		this.fullName = fullName;
+		this.arrivalDate = arrivalDate;
+		this.departureDate = departureDate;
+	}
 
 	public Long getId() {
 		return id;
