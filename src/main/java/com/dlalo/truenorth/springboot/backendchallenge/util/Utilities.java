@@ -12,7 +12,7 @@ public class Utilities {
 	
 	public static LocalDate getDateFromUnixTime(Long milliSeconds) {
 		if (milliSeconds != null) {
-			return Instant.ofEpochMilli(milliSeconds * 1000).atZone(ZoneId.systemDefault()).toLocalDate();
+			return Instant.ofEpochMilli(milliSeconds).atZone(ZoneId.systemDefault()).toLocalDate();
 		} else {
 			return null;
 		}

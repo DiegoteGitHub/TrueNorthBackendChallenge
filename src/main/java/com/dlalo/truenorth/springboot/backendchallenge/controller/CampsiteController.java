@@ -1,5 +1,7 @@
 package com.dlalo.truenorth.springboot.backendchallenge.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,8 +54,14 @@ public class CampsiteController {
 	}
 	
 	@RequestMapping(method = RequestMethod.GET, produces= { "application/json" })
-	String getAllCampsitesAvailability() {
-		return "You are looking for availability of all campsites ";
+	ResponseEntity<List<Campsite>>getAllCampsitesAvailability(
+			@RequestParam(value="fromDate", required = false) Long fromDate, 
+			@RequestParam(value="toDate", required = false) Long toDate, UriComponentsBuilder ucBuilder) {
+		
+		List<Campsite> campsites = service.getCampsitesAvailability(Utilities.getDateFromUnixTime(fromDate), Utilities.getDateFromUnixTime(toDate));
+		HttpHeaders headers = new HttpHeaders();
+		headers.setLocation(ucBuilder.path("/campsite").build().toUri());
+		return new ResponseEntity<List<Campsite>>(campsites, headers, HttpStatus.OK);
 	}
 	
 

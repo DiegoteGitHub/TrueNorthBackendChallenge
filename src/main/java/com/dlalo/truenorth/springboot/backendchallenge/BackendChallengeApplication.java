@@ -21,8 +21,12 @@ public class BackendChallengeApplication {
 		return (args) -> {
 			// Create the campsite
 			Campsite campsite = new Campsite();
-			campsite.setName("Campsite one");
+			campsite.setName("Volcano Island Raskita");
 			campsiteRepository.save(campsite);
+			
+			Campsite campsite2 = new Campsite();
+			campsite2.setName("Passover Islands");
+			campsiteRepository.save(campsite2);
 		};
 	}
 }

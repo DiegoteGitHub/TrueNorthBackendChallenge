@@ -117,6 +117,15 @@ public class CampsiteServiceImpl implements CampsiteService {
 		reserveRepository.save(oldReserve);
 	}
 	
+	@Override
+	public List<Campsite> getCampsitesAvailability(LocalDate arrivalDate, LocalDate departureDate) {
+		List<Campsite> campsites = (List<Campsite>) campsiteRepository.findAll();
+		for (Campsite c: campsites) {
+			getCampsiteAvailability(c.getId(), arrivalDate, departureDate);
+		}
+		return campsites;
+	}
+	
 	private boolean dateOverlapsWithReserve(LocalDate i, Reserve r) {
 		LocalDate arrivalDate = Utilities.getDateFromUnixTime(r.getArrivalDate());
 		LocalDate departureDate = Utilities.getDateFromUnixTime(r.getDepartureDate());

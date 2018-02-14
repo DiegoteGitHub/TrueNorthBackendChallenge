@@ -1,6 +1,7 @@
 package com.dlalo.truenorth.springboot.backendchallenge.service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.dlalo.truenorth.springboot.backendchallenge.model.Campsite;
 import com.dlalo.truenorth.springboot.backendchallenge.model.Reserve;
@@ -18,5 +19,7 @@ public interface CampsiteService {
 	void deleteReserve(Long reserveId);
 
 	void updateReserve(Reserve reserve, Long reserveId);
+
+	List<Campsite> getCampsitesAvailability(LocalDate arrivalDate, LocalDate departureDate);
 	
 }
