@@ -38,7 +38,7 @@ public class ReserveController {
 			logger.error(errorStr);
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
 			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
-		}	else {
+		} else {
 			Reserve reserve = service.getReserve(reserveId);
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
 			return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.OK);
@@ -56,10 +56,17 @@ public class ReserveController {
 			CustomErrorType error = new CustomErrorType("Reserve not found");
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
 			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
-		}	else {
-			service.updateReserve(reserve, reserveId);
-			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
-			return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.OK);
+		} else {
+			try {
+				service.updateReserve(reserve, reserveId);
+				headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
+				return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.OK);
+			} catch (RuntimeException r) {
+				String errStr = "Unable to update reserve, cause => " + r.getMessage();
+	        	logger.error(errStr);
+	        	CustomErrorType error =  new CustomErrorType(errStr);
+	        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+			}
 		}
     }
     

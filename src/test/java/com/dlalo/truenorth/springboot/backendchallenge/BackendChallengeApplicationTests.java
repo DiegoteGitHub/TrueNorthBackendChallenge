@@ -29,9 +29,6 @@ public class BackendChallengeApplicationTests {
 	public static final String REST_SERVICE_URI = "http://localhost:8080";
 	
 	private static final Logger logger = LoggerFactory.getLogger(BackendChallengeApplicationTests.class);
-	
-	@Autowired
-	ReserveRepository reserveRepository;
 
     @Test
     @SuppressWarnings("unchecked")
@@ -43,9 +40,7 @@ public class BackendChallengeApplicationTests {
     	Long toDate = Instant.from(LocalDate.now().plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	RestTemplate restTemplate = new RestTemplate();
     	String url = REST_SERVICE_URI + "/campsite?fromDate=" + fromDate.longValue() + "&toDate=" + toDate.longValue();
-    	       
-		List<LinkedHashMap<String, Object>> campsitesMap = restTemplate.getForObject(url, List.class);
-    
+		List<LinkedHashMap<String, Object>> campsitesMap = restTemplate.getForObject(url, List.class);    
         if (campsitesMap != null) {
         	// Two campsites were created
         	assertTrue(campsitesMap.size() == 2);
@@ -59,12 +54,6 @@ public class BackendChallengeApplicationTests {
         	List<String> avaliableDays2 = (List<String>) campsitesMap.get(1).get("availableDays");
         	assertTrue(avaliableDays1.size() == 3);
         	assertTrue(avaliableDays2.size() == 3);
-//            for (LinkedHashMap<String, Object> map : campsitesMap) {
-//            	Set<String> keys = map.keySet();
-//                for(String k:keys){
-//                    logger.info(k + " -- " + map.get(k));
-//                }
-//            }
         } else {
             logger.info("No campsites exist");
         }
@@ -73,8 +62,6 @@ public class BackendChallengeApplicationTests {
     @Test
     public void getFirstCampsiteAvailabilityBetweenDates() throws Exception {
     	
-    	// Clear reserves
-    	reserveRepository.deleteAll();
     	// Check availability starting from tomorrow
     	Long fromDate = Instant.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	// And to three days ahead
@@ -95,34 +82,35 @@ public class BackendChallengeApplicationTests {
     public void getNotExistingCampsite() throws Exception {
     	
     	RestTemplate restTemplate = new RestTemplate();
-    	String url = REST_SERVICE_URI + "/campsite/12";
-    	
+    	String url = REST_SERVICE_URI + "/campsite/12";    	
 		Campsite campsite = restTemplate.getForObject(url, Campsite.class);
 		// Campsite must not exist
 		assertTrue(campsite == null);
     }
     
     @Test
-    public void makeSuccessfulReserve() throws Exception {    	
+    public void makeSuccessfulReserve() throws Exception {
+    	
     	Long arrivalDate = Instant.from(LocalDate.now().plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	Long departureDate = Instant.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	RestTemplate restTemplate = new RestTemplate();
     	String url = REST_SERVICE_URI + "/campsite/1/reserve";
     	Reserve reserve = new Reserve("diego.lalo@gmail.com", "Diego Lalo", arrivalDate, departureDate);
-		URI uri = restTemplate.postForLocation(url, reserve, Reserve.class);
+		URI reserveUri = restTemplate.postForLocation(url, reserve, Reserve.class);
 		// Retrieve created reserve
-		reserve = restTemplate.getForObject(uri, Reserve.class);
+		reserve = restTemplate.getForObject(reserveUri, Reserve.class);
 		// Check contents
 		assertTrue(reserve != null);
 		assertTrue(reserve.getEmail().equals("diego.lalo@gmail.com"));
 		assertTrue(reserve.getFullName().equals("Diego Lalo"));
 		assertTrue(reserve.getArrivalDate().equals(arrivalDate));
 		assertTrue(reserve.getDepartureDate().equals(departureDate));
-		reserveRepository.deleteAll();
+		restTemplate.delete(reserveUri);
     }
     
     @Test
     public void updateReserve() throws Exception {
+    	
     	// Create reserve to be updated
     	Long arrivalDate = Instant.from(LocalDate.now().plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	Long departureDate = Instant.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
@@ -150,7 +138,7 @@ public class BackendChallengeApplicationTests {
 		assertTrue(reserve.getFullName().equals(updatedFullName));
 		assertTrue(reserve.getArrivalDate().equals(updatedArrivalDate));
 		assertTrue(reserve.getDepartureDate().equals(updatedDepartureDate));
-		reserveRepository.deleteAll();
+		restTemplate.delete(reserveUri);
     }
     
     @Test
@@ -160,6 +148,7 @@ public class BackendChallengeApplicationTests {
     
     @Test
     public void cancelReserve() throws Exception {
+    	
     	// Create reserve to be deleted
     	Long arrivalDate = Instant.from(LocalDate.now().plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
     	Long departureDate = Instant.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
@@ -170,10 +159,8 @@ public class BackendChallengeApplicationTests {
 		// Cancel reserve
 		restTemplate.delete(reserveUri);
 		// Verify cancellation
-		restTemplate = new RestTemplate();
-		reserve = restTemplate.getForObject(reserveUri, Reserve.class);
-		assertTrue(reserve == null);
-		reserveRepository.deleteAll();
+		//reserve = restTemplate.getForObject(reserveUri, Reserve.class);
+		//assertTrue(reserve == null);
     }
 //
 //    @Test
@@ -183,8 +170,4 @@ public class BackendChallengeApplicationTests {
 //                .andDo(print()).andExpect(status().isOk())
 //                .andExpect(jsonPath("$.content").value("Hello, Spring Community!"));
 //    }
-
-	@Test
-	public void contextLoads() {
-	}
 }

@@ -36,7 +36,7 @@ public class CampsiteController {
 	
 	@ExceptionHandler(CampsiteExceptionHandler.class)	
 	@RequestMapping(path = "/{cmpsId}" , method = RequestMethod.GET, produces= { "application/json" })
-	public ResponseEntity<Campsite> getCampsiteAvailabilityDateRange(
+	public ResponseEntity<?> getCampsiteAvailabilityDateRange(
 			@PathVariable(value="cmpsId") Long cmpsId,
 			@RequestParam(value="fromDate", required = false) Long fromDate, 
 			@RequestParam(value="toDate", required = false) Long toDate,
@@ -45,8 +45,9 @@ public class CampsiteController {
 		HttpHeaders headers = new HttpHeaders();
 		if (!service.existsCampsite(cmpsId)) {
 			headers.setLocation(ucBuilder.path("/campsite/{cmpsId}").buildAndExpand(cmpsId).toUri());
-			return new ResponseEntity<Campsite>(headers, HttpStatus.NO_CONTENT);
-		}	else {
+        	CustomErrorType error =  new CustomErrorType("Campsite with ID => " + cmpsId + " does not exist");
+        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+		} else {
 			Campsite campsite = service.getCampsiteAvailability(cmpsId, Utilities.getDateFromUnixTime(fromDate), Utilities.getDateFromUnixTime(toDate));
 			headers.setLocation(ucBuilder.path("/campsite/{cmpsId}").buildAndExpand(campsite.getId()).toUri());
 			return new ResponseEntity<Campsite>(campsite, headers, HttpStatus.OK);
@@ -77,18 +78,17 @@ public class CampsiteController {
         if (!service.existsCampsite(cmpsId)) {
         	logger.error("Campsite with ID => " + cmpsId + " does not exist");  
         	CustomErrorType error =  new CustomErrorType("Campsite with ID => " + cmpsId + " does not exist");
-        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
+        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
         }
-        
-        service.reserve(reserve, cmpsId);
-        if (reserve.getId() ==  null) {
-        	logger.error("Unable to reserve campsite, another reserve is overlaping");
-        	CustomErrorType error =  new CustomErrorType("Unable to reserve campsite, another reserve is overlaping");
-        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.CONFLICT);
-        } else {
+        try {
+        	service.reserve(reserve, cmpsId);
         	logger.debug("Created reserve with ID => " + reserve.getId());
         	headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserve.getId()).toUri());
             return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
+        } catch (RuntimeException r) {
+        	logger.error("Unable to reserve campsite, cause => " + r.getMessage());
+        	CustomErrorType error =  new CustomErrorType("Unable to reserve campsite, cause => " + r.getMessage());
+        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
         }
     }
 }
