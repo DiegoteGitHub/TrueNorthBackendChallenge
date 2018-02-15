@@ -1,5 +1,7 @@
 package com.dlalo.truenorth.springboot.backendchallenge.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,16 @@ public class ReserveController {
 	@Autowired
 	CampsiteService service;
 	
+	/* RETRIEVE ALL RESERVES */
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<?> getAllReserve(UriComponentsBuilder ucBuilder) {
+    	
+		HttpHeaders headers = new HttpHeaders();
+		List<Reserve> reserves = service.getAllReserves();
+		headers.setLocation(ucBuilder.path("/reserve").buildAndExpand().toUri());
+		return new ResponseEntity<List<Reserve>>(reserves, headers, HttpStatus.OK);
+    }
+	
 	/* RETRIEVE RESERVE */
     @RequestMapping(value = "/{reserveId}", method = RequestMethod.GET)
     public ResponseEntity<?> getReserve(
@@ -37,7 +49,7 @@ public class ReserveController {
 			CustomErrorType error = new CustomErrorType(errorStr);
 			logger.error(errorStr);
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
-			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
 		} else {
 			Reserve reserve = service.getReserve(reserveId);
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
@@ -55,7 +67,7 @@ public class ReserveController {
 		if (!service.existsReserve(reserveId)) {
 			CustomErrorType error = new CustomErrorType("Reserve not found");
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
-			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
 		} else {
 			try {
 				service.updateReserve(reserve, reserveId);
@@ -65,7 +77,7 @@ public class ReserveController {
 				String errStr = "Unable to update reserve, cause => " + r.getMessage();
 	        	logger.error(errStr);
 	        	CustomErrorType error =  new CustomErrorType(errStr);
-	        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+	        	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
 			}
 		}
     }
@@ -78,7 +90,7 @@ public class ReserveController {
 		if (!service.existsReserve(reserveId)) {
 			CustomErrorType error = new CustomErrorType("Reserve not found");
 			headers.setLocation(ucBuilder.path("/reserve/{reserveId}").buildAndExpand(reserveId).toUri());
-			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.NO_CONTENT);
 		}	else {
 			service.deleteReserve(reserveId);
 			CustomErrorType msg = new CustomErrorType("Reserve deleted");

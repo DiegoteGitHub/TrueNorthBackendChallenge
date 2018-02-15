@@ -15,6 +15,7 @@ public class RequestThread implements Runnable {
 	
 	private Reserve reserve;
 	private String serviceUri;
+	private URI resourceUri;
 	
 	private static final Logger logger = LoggerFactory.getLogger(RequestThread.class);
 	
@@ -38,6 +39,7 @@ public class RequestThread implements Runnable {
 			if (reserveUri == null) {
 				logger.error(Thread.currentThread().getName() + " Cannot reserve campsite ");
 			} else {
+				resourceUri = reserveUri;
 				logger.info(Thread.currentThread().getName() + " Successfully reserved campsite! Uri => " + reserveUri);
 			}
     	} catch (Exception e) {
@@ -45,4 +47,7 @@ public class RequestThread implements Runnable {
     	}
 	}
 
+	public URI getResourceUri() {
+		return resourceUri;
+	}
 }

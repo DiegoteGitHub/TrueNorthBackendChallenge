@@ -1,8 +1,13 @@
 package com.dlalo.truenorth.springboot.backendchallenge.util;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.web.client.RestTemplate;
 
 import com.dlalo.truenorth.springboot.backendchallenge.model.Reserve;
 
@@ -25,12 +30,22 @@ public class ConcurrentRequestGenerator {
 	
 	public void run() throws InterruptedException {
 		ExecutorService es = Executors.newFixedThreadPool(numPoolThreads);
+		List<RequestThread> threads = new ArrayList<RequestThread>();
+		RestTemplate restTemplate = new RestTemplate();
 		
 		for (int i = 0; i<numParallelReqs; i++) {
-			es.execute(new RequestThread(reserve, serviceUri));
+			RequestThread requestThread = new RequestThread(reserve, serviceUri);
+			es.execute(requestThread);
+			threads.add(requestThread);
 		}
 		es.shutdown();
 		es.awaitTermination(2, TimeUnit.MINUTES);
+		
+		// Delete created resources
+		for (RequestThread rt: threads) {
+			if (rt.getResourceUri() != null)
+				restTemplate.delete(rt.getResourceUri());
+		}
 	}
 
 }

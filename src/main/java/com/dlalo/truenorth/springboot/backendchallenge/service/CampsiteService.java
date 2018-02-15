@@ -23,5 +23,7 @@ public interface CampsiteService {
 	List<Campsite> getCampsitesAvailability(LocalDate arrivalDate, LocalDate departureDate);
 
 	Reserve getReserve(Long reserveId);
+
+	List<Reserve> getAllReserves();
 	
 }
