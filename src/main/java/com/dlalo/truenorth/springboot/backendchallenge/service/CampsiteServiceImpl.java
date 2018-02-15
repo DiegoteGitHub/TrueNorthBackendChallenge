@@ -1,7 +1,9 @@
 package com.dlalo.truenorth.springboot.backendchallenge.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -63,15 +65,17 @@ public class CampsiteServiceImpl implements CampsiteService {
 
 		Campsite campsite = campsiteRepository.findById(campsiteId).get();
 		if (campsite != null) {
-			campsite.setAvailableDays(new HashSet<LocalDate>());
+			campsite.setAvailableDays(new HashSet<Long>());
 			for (LocalDate i = fromDate; i.isBefore(toDate); i = i.plusDays(1)) {
 				if (campsite.getReserves().isEmpty()) {
-					campsite.getAvailableDays().add(i);
+					Long availDay = Instant.from(i.atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
+					campsite.getAvailableDays().add(availDay);
 					logger.debug("Available date => " + i);
 				} else {
 					for (Reserve r: campsite.getReserves()) {
 						if (!dateOverlapsWithReserve(i, r)) {
-							campsite.getAvailableDays().add(i);
+							Long availDay = Instant.from(i.atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
+							campsite.getAvailableDays().add(availDay);
 							logger.debug("Available date => " + i);
 						} else {
 							break;

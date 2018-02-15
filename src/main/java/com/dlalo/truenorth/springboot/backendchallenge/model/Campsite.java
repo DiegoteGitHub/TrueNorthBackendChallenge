@@ -28,7 +28,7 @@ public class Campsite implements Serializable {
 	private String name;
 	
 	@Transient
-	private Set<LocalDate> availableDays;
+	private Set<Long> availableDays;
 	
 	// 1 campsite => N reserves
 	@OneToMany(mappedBy="campsite", fetch=FetchType.LAZY, cascade=CascadeType.ALL)
@@ -58,11 +58,11 @@ public class Campsite implements Serializable {
 		this.reserves = reserves;
 	}
 
-	public Set<LocalDate> getAvailableDays() {
+	public Set<Long> getAvailableDays() {
 		return availableDays;
 	}
 
-	public void setAvailableDays(Set<LocalDate> availableDays) {
+	public void setAvailableDays(Set<Long> availableDays) {
 		this.availableDays = availableDays;
 	}
 }
