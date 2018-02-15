@@ -8,7 +8,6 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,8 +88,7 @@ public class CampsiteServiceImpl implements CampsiteService {
 	}
 
 	@Override
-	@Transactional
-	public void reserve(Reserve reserve, Long campsiteId) {
+	public synchronized void reserve(Reserve reserve, Long campsiteId) {
 		validateCreateReserve(reserve, campsiteId);
 		reserve.setCampsite(campsiteRepository.findById(campsiteId).get());
 		reserveRepository.save(reserve);

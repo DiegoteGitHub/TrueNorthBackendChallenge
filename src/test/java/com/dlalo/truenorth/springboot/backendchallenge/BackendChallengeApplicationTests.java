@@ -13,14 +13,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
 import com.dlalo.truenorth.springboot.backendchallenge.model.Campsite;
 import com.dlalo.truenorth.springboot.backendchallenge.model.Reserve;
-import com.dlalo.truenorth.springboot.backendchallenge.repository.ReserveRepository;
+import com.dlalo.truenorth.springboot.backendchallenge.util.ConcurrentRequestGenerator;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -142,8 +141,17 @@ public class BackendChallengeApplicationTests {
     }
     
     @Test
-    public void makeConcurrentfulReserve() throws Exception {
-    	
+    public void makeConcurrentReserves() throws Exception {
+    	// Constants
+    	final int NUM_POOL_THREADS = 10;
+    	final int NUM_PARALLEL_REQUESTS = 10;
+    	// The reserve to be issued in parallel
+    	Long arrivalDate = Instant.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
+    	Long departureDate = Instant.from(LocalDate.now().plusDays(10).atStartOfDay(ZoneId.systemDefault()).toInstant()).toEpochMilli();
+    	String url = REST_SERVICE_URI + "/campsite/1/reserve";
+    	Reserve reserve = new Reserve("diego.lalo@gmail.com", "Diego Lalo", arrivalDate, departureDate);
+    	ConcurrentRequestGenerator generator = new ConcurrentRequestGenerator(NUM_POOL_THREADS, NUM_PARALLEL_REQUESTS, reserve, url);
+    	generator.run();
     }
     
     @Test
@@ -159,8 +167,8 @@ public class BackendChallengeApplicationTests {
 		// Cancel reserve
 		restTemplate.delete(reserveUri);
 		// Verify cancellation
-		//reserve = restTemplate.getForObject(reserveUri, Reserve.class);
-		//assertTrue(reserve == null);
+		reserve = restTemplate.getForObject(reserveUri, Reserve.class);
+		assertTrue(reserve == null);
     }
 //
 //    @Test

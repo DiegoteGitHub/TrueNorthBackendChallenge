@@ -87,6 +87,7 @@ public class CampsiteController {
             return new ResponseEntity<Reserve>(reserve, headers, HttpStatus.CREATED);
         } catch (RuntimeException r) {
         	logger.error("Unable to reserve campsite, cause => " + r.getMessage());
+        	headers.setLocation(ucBuilder.path("/{cmpsId}/reserve").buildAndExpand(cmpsId).toUri());
         	CustomErrorType error =  new CustomErrorType("Unable to reserve campsite, cause => " + r.getMessage());
         	return new ResponseEntity<CustomErrorType>(error, headers, HttpStatus.BAD_REQUEST);
         }
